@@ -3257,7 +3257,7 @@
     ! only flush if ponds are active
     if (tr_pond) then
 
-       ice_mass  = c0
+       call calc_ice_mass(nilyr, phi, zTin, hilyr, ice_mass)
        perm_harm = c0
        phi_min   = c1
 
@@ -3270,16 +3270,10 @@
           ! permeability
           perm = permeability(phi(k))
 
-          ! ice mass
-          ice_mass = ice_mass + phi(k)        * icepack_mushy_density_brine(liquidus_brine_salinity_mush(zTin(k))) + &
-               (c1 - phi(k)) * rhoi
-
           ! permeability harmonic mean
           perm_harm = perm_harm + c1 / (perm + 1e-30_dbl_kind)
 
        enddo ! k
-
-       ice_mass = ice_mass * hilyr
 
        perm_harm = real(nilyr,dbl_kind) / perm_harm
 
@@ -3755,6 +3749,44 @@
     trc = trc2
 
   end subroutine update_vertical_tracers_ice
+
+!=======================================================================
+! Ice Mass
+!=======================================================================
+
+  subroutine calc_ice_mass(nilyr, phi, zTin, hilyr, ice_mass)
+     
+     ! Calculate the mass of the ice per unit category area
+     integer (kind=int_kind), intent(in) :: &
+          nilyr         ! number of ice layers
+
+     real(kind=dbl_kind), dimension(:), intent(in) :: &
+          zTin      , & ! ice layer temperature (C)
+          phi           ! ice layer liquid fraction
+
+     real(kind=dbl_kind), intent(in) :: &
+          hilyr         ! ice layer thickness (m)
+
+     real(kind=dbl_kind), intent(out) :: &
+          ice_mass      ! mass per unit category area (kg m-2)
+     
+     ! local variables
+     integer(kind=int_kind) :: &
+          k             ! ice layer index
+     
+     character(len=*),parameter :: subname='(calc_ice_mass)'
+
+     ice_mass = c0
+
+     do k = 1, nilyr
+          ice_mass = ice_mass + phi(k) * &
+           icepack_mushy_density_brine(liquidus_brine_salinity_mush(zTin(k))) &
+           + (c1 - phi(k)) * rhoi
+     enddo
+
+     ice_mass = ice_mass * hilyr
+
+end subroutine calc_ice_mass
 
 !=======================================================================
 
