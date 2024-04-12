@@ -97,6 +97,8 @@
          Ts                     , & ! surface air temperature (C)
          apondn                 , & ! local pond area
          hpondn                 , & ! local pond depth (m)
+         vpondn                 , & ! pond volume per category area (m)
+         dvpondn                , & ! change in pond volume per category area (m)
          dvn                    , & ! change in pond volume (m)
          hlid, alid             , & ! refrozen lid thickness, area
          dhlid                  , & ! change in refrozen lid thickness
@@ -114,7 +116,8 @@
       ! Initialize
       !-----------------------------------------------------------------
 
-      volpn = hpnd * aicen * alvl * apnd
+      !volpn = hpnd * aicen * alvl * apnd
+      vpondn = hpnd * alvl * apnd
       ffrac = c0
 
       !-----------------------------------------------------------------
@@ -134,7 +137,8 @@
             !--------------------------------------------------------------
             apondn = c0
             hpondn = c0
-            volpn  = c0
+            !volpn  = c0
+            vpondn = c0
             hlid = c0
 
          else
@@ -149,32 +153,38 @@
             !-----------------------------------------------------------
             ! add melt water
             if (use_smliq_pnd) then
-               dvn = rfrac/rhofresh*(meltt*rhoi &
-                   +                 meltsliqn)*aicen
+               !dvn = rfrac/rhofresh*(meltt*rhoi &
+               !    +                 meltsliqn)*aicen
+               dvpondn = rfrac/rhofresh*(meltt*rhoi + meltsliqn)
             else
-               dvn = rfrac/rhofresh*(meltt*rhoi &
-                   +                 melts*rhos &
-                   +                 frain*  dt)*aicen
+               !dvn = rfrac/rhofresh*(meltt*rhoi &
+               !    +                 melts*rhos &
+               !    +                 frain*  dt)*aicen
+               dvpondn = rfrac/rhofresh*(meltt*rhoi + melts*rhos + frain*dt)
             endif
             ! Track lost meltwater dvn is volume of meltwater (m3/m2) captured
             ! over entire grid cell area. Multiply by (1-rfrac)/rfrac to get
             ! loss over entire area. And divide by aicen to get loss per unit
             ! category area (for consistency with melttn, frpndn, etc)
-            rfpndn = dvn * (c1-rfrac) / (rfrac * aicen)
-            dvn_temp = dvn
+            !rfpndn = dvn * (c1-rfrac) / (rfrac * aicen)
+            rfpndn = dvpondn * (c1-rfrac) / rfrac
+            !dvn_temp = dvn
+            dvn_temp = dvpondn
 
             ! shrink pond volume under freezing conditions
             if (trim(frzpnd) == 'cesm') then
                Tp = Timelt - Td
                dTs = max(Tp - Tsfcn,c0)
-               dvn = dvn - volpn * (c1 - exp(rexp*dTs/Tp))
+               !dvn = dvn - volpn * (c1 - exp(rexp*dTs/Tp))
+               dvpondn = dvpondn - vpondn * (c1 - exp(rexp*dTs/Tp))
 
             else
                ! trim(frzpnd) == 'hlid' Stefan approximation
                ! assumes pond is fresh (freezing temperature = 0 C)
                ! and ice grows from existing pond ice
                hlid = ipnd
-               if (dvn == c0) then ! freeze pond
+               !if (dvn == c0) then ! freeze pond
+               if (dvpondn == c0) then ! freeze pond
                   Ts = Tair - Tffresh
                   if (Ts < c0) then
                      ! if (Ts < -c2) then ! as in meltpond_cesm
@@ -196,32 +206,41 @@
                           ffrac = min(-dhlid*rhoi*Lfresh/(dt*fsurfn), c1)
                   endif
                endif
-               alid = apondn * aicen
-               dvn = dvn - dhlid*alid*rhoi/rhofresh
+               !alid = apondn * aicen
+               !dvn = dvn - dhlid*alid*rhoi/rhofresh
+               dvpondn = dvpondn - dhlid*apondn*rhoi/rhofresh
             endif
 
-            volpn = volpn + dvn
+            !volpn = volpn + dvn
+            vpondn = vpondn + dvpondn
             ! Track lost/gained meltwater per unit category area from pond 
             ! lid freezing/melting. Note sign flip relative to dvn convention
-            ilpndn = (dvn_temp - dvn) / aicen
+            !ilpndn = (dvn_temp - dvn) / aicen
+            ilpndn = dvn_temp - dvpondn
 
             !-----------------------------------------------------------
             ! update pond area and depth
             !-----------------------------------------------------------
-            if (volpn <= c0) then
-               volpn = c0
+            !if (volpn <= c0) then
+            if (vpondn <= c0) then
+               !volpn = c0
+               vpondn = c0
                apondn = c0
             endif
 
             if (apondn*aicen > puny) then ! existing ponds
+               !apondn = max(c0, min(alvl_tmp, &
+               !     apondn + 0.5*dvn/(pndaspect*apondn*aicen)))
                apondn = max(c0, min(alvl_tmp, &
-                    apondn + 0.5*dvn/(pndaspect*apondn*aicen)))
+                    apondn + 0.5*dvpondn/(pndaspect*apondn)))
                hpondn = c0
                if (apondn > puny) &
-                    hpondn = volpn/(apondn*aicen)
+                    !hpondn = volpn/(apondn*aicen)
+                  hpondn = vpondn/apondn
 
             elseif (alvl_tmp*aicen > c10*puny) then ! new ponds
-               apondn = min (sqrt(volpn/(pndaspect*aicen)), alvl_tmp)
+               !apondn = min (sqrt(volpn/(pndaspect*aicen)), alvl_tmp)
+               apondn = min (sqrt(vpondn/pndaspect), alvl_tmp)
                hpondn = pndaspect * apondn ! Possible loss of meltwater if apondn == alvl_tmp
 
             else           ! melt water runs off deformed ice
