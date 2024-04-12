@@ -83,7 +83,7 @@
 
       real (kind=dbl_kind) :: &
          volpn, &     ! pond volume per unit area (m)
-         hpond_tmp, & ! local variable for hpond before flushing
+         dhpond, &    ! change in hpond (m)
          dvn_temp     ! local variable for change in volume due to rfrac
 
       real (kind=dbl_kind), dimension (nilyr) :: &
@@ -231,16 +231,12 @@
             apondn = max(apondn, c0)
 
             ! limit pond depth to maintain nonnegative freeboard
-            hpond_tmp = hpondn
-            hpondn = min(hpondn, ((rhow-rhoi)*hi - rhos*hs)/rhofresh)
-            ! The way apondn is used is very confusing but at this point
-            ! apondn is the fraction of the entire category (level + deformed)
-            ! with ponds on it. Thus, multiplying the change in hpondn (i.e.,
-            ! the meltwater lost from the ponded area) by apondn here yields
-            ! the meltwater height lost averaged over the category area
-            ! analogous to how melttn is defined.
-            frpndn = (hpond_tmp - hpondn) * apondn
-
+            dhpond = min(((rhow-rhoi)*hi - rhos*hs)/rhofresh - hpondn, c0)
+            call pond_hypsometry(apnd, hpondn, dhpond=dhpond)
+            ! at this point apondn is the fraction of the entire category 
+            ! (level + deformed) with ponds on it
+            frpndn = - dhpond * apondn
+            
             ! fraction of grid cell covered by ponds
             apondn = apondn * aicen
 
