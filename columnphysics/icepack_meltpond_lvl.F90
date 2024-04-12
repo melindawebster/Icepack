@@ -19,6 +19,7 @@
       use icepack_parameters, only: viscosity_dyn, rhoi, rhos, rhow, Timelt, Tffresh, Lfresh
       use icepack_parameters, only: gravit, depressT, rhofresh, kice, pndaspect, use_smliq_pnd
       use icepack_parameters, only: ktherm, frzpnd, dpscale, hi_min
+      use icepack_parameters, only: pndhyps
       use icepack_tracers,    only: nilyr
       use icepack_warnings, only: warnstr, icepack_warnings_add
       use icepack_warnings, only: icepack_warnings_setabort, icepack_warnings_aborted
@@ -26,7 +27,7 @@
       implicit none
 
       private
-      public :: compute_ponds_lvl
+      public :: compute_ponds_lvl, pond_hypsometry
 
 !=======================================================================
 
@@ -345,6 +346,43 @@
       perm = 3.0e-8_dbl_kind * (minval(phi))**3
 
       end subroutine brine_permeability
+
+!=======================================================================
+
+! compute the changes in pond area and depth
+
+      subroutine pond_hypsometry(apnd, hpond, dhpond, dvpond)
+
+      real (kind=dbl_kind), intent(inout) :: &
+         apnd  , & ! pond fractional area tracer
+         hpond     ! pond depth tracer
+
+      real (kind=dbl_kind), intent(in), optional :: &
+         dhpond, & ! incoming change in pond depth (may be converted to dvpond)
+         dvpond    ! incoming change in pond volume per unit 'active' area
+                   ! (i.e., for level ponds this is the level fraction of cat)
+      
+      ! local variables
+      
+      real (kind=dbl_kind) :: &
+         dv        ! local variable for change in pond volume
+      
+      character(len=*),parameter :: subname='(pond_hypsometry)'
+
+      ! Behavior is undefined if dhpond and dvpond are both present
+      if (present(dhpond) .and. present(dvpond)) then
+         call icepack_warnings_setabort(.true.,__FILE__,__LINE__)
+         call icepack_warnings_add(subname//" dhpond and dvpond cannot both be input" )
+         return
+      endif
+
+      if (trim(pndhyps) == 'none') then
+         if (present(dhpond)) then ! simply change hpond by dhpond
+            hpond = hpond + dhpond
+         endif
+      endif
+      
+      end subroutine pond_hypsometry
 
 !=======================================================================
 

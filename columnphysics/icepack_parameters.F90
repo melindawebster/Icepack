@@ -329,7 +329,8 @@
 
       ! level-ice ponds
       character (len=char_len), public :: &
-         frzpnd    = 'cesm'           ! pond refreezing parameterization
+         frzpnd    = 'cesm'     , &   ! pond refreezing parameterization
+         pndhyps   = 'none'           ! controls pond depth-area changes
 
       real (kind=dbl_kind), public :: &
          dpscale   = 0.001_dbl_kind,& ! alter e-folding time scale for flushing (ktherm=1)

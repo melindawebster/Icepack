@@ -19,6 +19,7 @@
   use icepack_tracers, only: tr_pond, tr_pond_lvl
   use icepack_therm_shared, only: surface_heat_flux, dsurface_heat_flux_dTsf
   use icepack_therm_shared, only: ferrmax
+  use icepack_meltpond_lvl, only: pond_hypsometry
   use icepack_warnings, only: warnstr, icepack_warnings_add
   use icepack_warnings, only: icepack_warnings_setabort, icepack_warnings_aborted
 
@@ -3318,12 +3319,12 @@
 
     real(kind=dbl_kind), intent(in) :: &
          w     , & ! vertical flushing Darcy flow rate (m s-1)
-         apnd  , & ! melt pond area tracer (-)
          dt    , & ! time step (s)
          alvl      ! level ice fraction (-)
 
     real(kind=dbl_kind), intent(inout) :: &
          hpond , & ! melt pond thickness (m)
+         apnd  , & ! melt pond area tracer (-)
          flpnd , & ! pond flushing rate due to ice permeability (m/s)
          expnd     ! exponential pond drainage rate (m/s)
      
@@ -3350,13 +3351,13 @@
 
           ! flush pond through mush
           dhpond = max(- w * dt / apnd, -hpond)
-          hpond = hpond + dhpond
+          call pond_hypsometry(apnd, hpond, dhpond=dhpond)
           flpnd = - dhpond * apond
 
           ! exponential decay of pond
           lambda_pond = c1 / (tscale_pnd_drain * 24.0_dbl_kind * 3600.0_dbl_kind)
           dhpond = max(- lambda_pond * dt * (hpond + hpond0), -hpond)
-          hpond = hpond + dhpond
+          call pond_hypsometry(apnd, hpond, dhpond=dhpond)
           expnd = - dhpond * apond
           
        endif
