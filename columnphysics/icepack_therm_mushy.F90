@@ -3328,7 +3328,8 @@
          expnd     ! exponential pond drainage rate (m/s)
      
     real(kind=dbl_kind) :: &
-         hpond_tmp ! local variable for hpond before flushing
+         apond    , & ! pond fraction of category (incl. deformed ice)
+         dhpond       ! change in pond depth per unit pond area (m)
 
     real(kind=dbl_kind), parameter :: &
          hpond0 = 0.01_dbl_kind
@@ -3341,33 +3342,23 @@
     if (tr_pond) then
        if (apnd > c0 .and. hpond > c0) then
 
-          hpond_tmp = hpond
-          ! flush pond through mush
-          hpond = hpond - w * dt / apnd
-
-          hpond = max(hpond, c0)
-          ! apnd here is just the pond tracer for the category, i.e. it could 
-          ! be the fraction of level ice that is ponded, not the fraction
-          ! of the category that is. Need to adjust for the difference between
-          ! level area and category area because flpnd is per category area
           if (tr_pond_lvl) then
-               flpnd = (hpond_tmp - hpond) * apnd * alvl
+               apond = apnd * alvl
           else
-               flpnd = (hpond_tmp - hpond) * apnd
+               apond = apnd
           endif
 
-          hpond_tmp = hpond
+          ! flush pond through mush
+          dhpond = max(- w * dt / apnd, -hpond)
+          hpond = hpond + dhpond
+          flpnd = - dhpond * apond
+
           ! exponential decay of pond
           lambda_pond = c1 / (tscale_pnd_drain * 24.0_dbl_kind * 3600.0_dbl_kind)
-          hpond = hpond - lambda_pond * dt * (hpond + hpond0)
-
-          hpond = max(hpond, c0)
-          ! Same logic as above for flpnd
-          if (tr_pond_lvl) then
-               expnd = (hpond_tmp - hpond) * apnd * alvl
-          else
-               expnd = (hpond_tmp - hpond) * apnd
-          endif
+          dhpond = max(- lambda_pond * dt * (hpond + hpond0), -hpond)
+          hpond = hpond + dhpond
+          expnd = - dhpond * apond
+          
        endif
     endif
 
