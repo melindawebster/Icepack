@@ -230,7 +230,7 @@
             ! limit pond depth to maintain nonnegative freeboard
             dhpond = min(((rhow-rhoi)*hi - rhos*hs)/rhofresh - hpondn, c0)
             apnd = apondn / alvl_tmp
-            call pond_hypsometry(apnd, hpondn, dhpond=dhpond)
+            call pond_hypsometry(hpondn, dhpond=dhpond)
             ! at this point apondn is the fraction of the entire category 
             ! (level + deformed) with ponds on it
             frpndn = - dhpond * apondn
@@ -342,16 +342,17 @@
 
 ! compute the changes in pond area and depth
 
-      subroutine pond_hypsometry(apnd, hpond, dhpond, dvpond)
+      subroutine pond_hypsometry(hpond, apond, dhpond, dvpond)
 
       real (kind=dbl_kind), intent(inout) :: &
-         apnd  , & ! pond fractional area tracer
          hpond     ! pond depth tracer
+      
+      real (kind=dbl_kind), intent(inout), optional :: &
+         apond     ! pond fractional area of category (apnd*alvl for lvl ponds)
 
       real (kind=dbl_kind), intent(in), optional :: &
-         dhpond, & ! incoming change in pond depth (may be converted to dvpond)
-         dvpond    ! incoming change in pond volume per unit 'active' area
-                   ! (i.e., for level ponds this is the level fraction of cat)
+         dhpond, & ! incoming change in pond depth (may be converted to dv)
+         dvpond    ! incoming change in pond volume per unit category area
       
       ! local variables
       
