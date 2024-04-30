@@ -330,14 +330,19 @@
       ! level-ice ponds
       character (len=char_len), public :: &
          frzpnd    = 'cesm'     , &   ! pond refreezing parameterization
-         pndhyps   = 'none'           ! controls pond depth-area changes
+         pndhyps   = 'none'     , &   ! controls pond depth-area changes
+         pndfrbd   = 'floor'    , &   ! over what domain to calculate freeboard constraint
+         pndhead   = 'perched'  , &   ! geometry for computing pond pressure head
+         pndmacr   = 'lambda'         ! driving force for macro-flaw pond drainage
 
       real (kind=dbl_kind), public :: &
          dpscale   = 0.001_dbl_kind,& ! alter e-folding time scale for flushing (ktherm=1)
          rfracmin  = 0.15_dbl_kind, & ! minimum retained fraction of meltwater
          rfracmax  = 0.85_dbl_kind, & ! maximum retained fraction of meltwater
          pndaspect = 0.8_dbl_kind, &  ! ratio of pond depth to area fraction
-         hs1       = 0.03_dbl_kind    ! snow depth for transition to bare pond ice (m)
+         hs1       = 0.03_dbl_kind, & ! snow depth for transition to bare pond ice (m)
+         apnd_sl   = 0.27_dbl_kind, & ! equilibrium pond fraction for sea level parameterization
+         hpnd_sl   = 0.15_dbl_kind    ! equilibrium pond depth for sea level parameterization
 
       ! topo ponds
       real (kind=dbl_kind), public :: &
@@ -466,7 +471,8 @@
          atmbndy_in, calc_strair_in, formdrag_in, highfreq_in, natmiter_in, &
          atmiter_conv_in, calc_dragio_in, &
          tfrz_option_in, kitd_in, kcatbound_in, hs0_in, frzpnd_in, &
-         pndhyps_in, &
+         pndhyps_in, pndfrbd_in, pndhead_in, pndmacr_in, &
+         apnd_sl_in, hpnd_sl_in, &
          saltflux_option_in, &
          floeshape_in, wave_spec_in, wave_spec_type_in, nfreq_in, &
          dpscale_in, rfracmin_in, rfracmax_in, pndaspect_in, hs1_in, hp1_in, &
@@ -787,14 +793,19 @@
       ! level-ice ponds
       character (len=*), intent(in), optional :: &
          frzpnd_in, &       ! pond refreezing parameterization
-         pndhyps_in         ! pond hypsometry parameterization
+         pndhyps_in, &      ! pond hypsometry parameterization
+         pndfrbd_in, &      ! pond freeboard parameterization
+         pndhead_in, &      ! pond pressure head parameterization
+         pndmacr_in         ! pond macro-drainage parameterization
 
       real (kind=dbl_kind), intent(in), optional :: &
          dpscale_in, &      ! alter e-folding time scale for flushing
          rfracmin_in, &     ! minimum retained fraction of meltwater
          rfracmax_in, &     ! maximum retained fraction of meltwater
          pndaspect_in, &    ! ratio of pond depth to pond fraction
-         hs1_in             ! tapering parameter for snow on pond ice
+         hs1_in, &          ! tapering parameter for snow on pond ice
+         apnd_sl_in, &      ! pond fraction for sea level parameterization
+         hpnd_sl_in         ! pond depth for sea level parameterization
 
       ! topo ponds
       real (kind=dbl_kind), intent(in), optional :: &
@@ -963,6 +974,11 @@
       if (present(hs0_in)               ) hs0              = hs0_in
       if (present(frzpnd_in)            ) frzpnd           = frzpnd_in
       if (present(pndhyps_in)           ) pndhyps          = pndhyps_in
+      if (present(pndfrbd_in)           ) pndfrbd          = pndfrbd_in
+      if (present(pndhead_in)           ) pndhead          = pndhead_in
+      if (present(pndmacr_in)           ) pndmacr          = pndmacr_in
+      if (present(apnd_sl_in)           ) apnd_sl          = apnd_sl_in
+      if (present(hpnd_sl_in)           ) hpnd_sl          = hpnd_sl_in
       if (present(dpscale_in)           ) dpscale          = dpscale_in
       if (present(rfracmin_in)          ) rfracmin         = rfracmin_in
       if (present(rfracmax_in)          ) rfracmax         = rfracmax_in
@@ -1196,7 +1212,8 @@
          atmbndy_out, calc_strair_out, formdrag_out, highfreq_out, natmiter_out, &
          atmiter_conv_out, calc_dragio_out, &
          tfrz_option_out, kitd_out, kcatbound_out, hs0_out, frzpnd_out, &
-         pndhyps_out, &
+         pndhyps_out, pndfrbd_out, pndhead_out, pndmacr_out, &
+         apnd_sl_out, hpnd_sl_out, &
          saltflux_option_out, &
          floeshape_out, wave_spec_out, wave_spec_type_out, nfreq_out, &
          dpscale_out, rfracmin_out, rfracmax_out, pndaspect_out, hs1_out, hp1_out, &
@@ -1528,14 +1545,19 @@
       ! level-ice ponds
       character (len=*), intent(out), optional :: &
          frzpnd_out, &       ! pond refreezing parameterization
-         pndhyps_out         ! pond hypsometry parameterization
+         pndhyps_out, &      ! pond hypsometry parameterization
+         pndfrbd_out, &      ! pond freeboard parameterization
+         pndhead_out, &      ! pond pressure head parameterization
+         pndmacr_out         ! pond macro-drainage parameterization
 
       real (kind=dbl_kind), intent(out), optional :: &
          dpscale_out, &      ! alter e-folding time scale for flushing
          rfracmin_out, &     ! minimum retained fraction of meltwater
          rfracmax_out, &     ! maximum retained fraction of meltwater
          pndaspect_out, &    ! ratio of pond depth to pond fraction
-         hs1_out             ! tapering parameter for snow on pond ice
+         hs1_out, &          ! tapering parameter for snow on pond ice
+         apnd_sl_out, &      ! pond fraction for sea level parameterization
+         hpnd_sl_out         ! pond depth for sea level parameterization
 
       ! topo ponds
       real (kind=dbl_kind), intent(out), optional :: &
@@ -1736,6 +1758,11 @@
       if (present(hs0_out)               ) hs0_out          = hs0
       if (present(frzpnd_out)            ) frzpnd_out       = frzpnd
       if (present(pndhyps_out)           ) pndhyps_out      = pndhyps
+      if (present(pndfrbd_out)           ) pndfrbd_out      = pndfrbd
+      if (present(pndhead_out)           ) pndhead_out      = pndhead
+      if (present(pndmacr_out)           ) pndmacr_out      = pndmacr
+      if (present(apnd_sl_out)           ) apnd_sl_out      = apnd_sl
+      if (present(hpnd_sl_out)           ) hpnd_sl_out      = hpnd_sl
       if (present(dpscale_out)           ) dpscale_out      = dpscale
       if (present(rfracmin_out)          ) rfracmin_out     = rfracmin
       if (present(rfracmax_out)          ) rfracmax_out     = rfracmax
@@ -1944,6 +1971,11 @@
         write(iounit,*) "  hs0        = ", hs0
         write(iounit,*) "  frzpnd     = ", trim(frzpnd)
         write(iounit,*) "  pndhyps    = ", trim(pndhyps)
+        write(iounit,*) "  pndfrbd    = ", trim(pndfrbd)
+        write(iounit,*) "  pndhead    = ", trim(pndhead)
+        write(iounit,*) "  pndmacr    = ", trim(pndmacr)
+        write(iounit,*) "  apnd_sl    = ", apnd_sl
+        write(iounit,*) "  hpnd_sl    = ", hpnd_sl
         write(iounit,*) "  dpscale    = ", dpscale
         write(iounit,*) "  rfracmin   = ", rfracmin
         write(iounit,*) "  rfracmax   = ", rfracmax

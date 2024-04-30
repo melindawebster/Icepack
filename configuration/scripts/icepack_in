@@ -79,6 +79,11 @@
     dpscale         = 1.e-3
     frzpnd          = 'hlid'
     pndhyps         = 'none'
+    pndfrbd         = 'floor'
+    pndhead         = 'perched'
+    pndmacr         = 'lambda'
+    apnd_sl         = 0.27
+    hpnd_sl         = 0.15
     rfracmin        = 0.15
     rfracmax        = 1.
     pndaspect       = 0.8

@@ -93,7 +93,8 @@
          a_rapid_mode, Rac_rapid_mode, aspect_rapid_mode, dSdt_slow_mode, &
          phi_c_slow_mode, phi_i_mushy, kalg, emissivity, floediam, hfrazilmin, &
          rsnw_fall, rsnw_tmax, rhosnew, rhosmin, rhosmax, &
-         windmin, drhosdwind, snwlvlfac
+         windmin, drhosdwind, snwlvlfac, &
+         apnd_sl, hpnd_sl
 
       integer (kind=int_kind) :: ktherm, kstrength, krdg_partic, krdg_redist, &
          natmiter, kitd, kcatbound
@@ -101,7 +102,7 @@
       character (len=char_len) :: shortwave, albedo_type, conduct, fbot_xfer_type, &
          cpl_frazil, tfrz_option, saltflux_option, &
          frzpnd, atmbndy, wave_spec_type, snwredist, snw_aging_table, &
-         pndhyps
+         pndhyps, pndfrbd, pndhead, pndmacr
 
       logical (kind=log_kind) :: sw_redist, use_smliq_pnd, snwgrain, update_ocn_f
       real (kind=dbl_kind)    :: sw_frac, sw_dtemp
@@ -164,7 +165,9 @@
       namelist /ponds_nml/ &
         hs0,            dpscale,         frzpnd,                        &
         rfracmin,       rfracmax,        pndaspect,     hs1,            &
-        hp1,            pndhyps
+        hp1,            pndhyps,         pndfrbd,       pndhead,        &
+        pndmacr,        apnd_sl,         hpnd_sl
+
       namelist /snow_nml/ &
         snwredist,      snwgrain,       rsnw_fall,     rsnw_tmax,      &
         rhosnew,        rhosmin,        rhosmax,       snwlvlfac,      &
@@ -215,7 +218,8 @@
            emissivity_out=emissivity, &
            kitd_out=kitd, kcatbound_out=kcatbound, hs0_out=hs0, &
            dpscale_out=dpscale, frzpnd_out=frzpnd, &
-           pndhyps_out=pndhyps, &
+           pndhyps_out=pndhyps, pndfrbd_out=pndfrbd, pndhead_out=pndhead, &
+           pndmacr_out=pndmacr, apnd_sl_out=apnd_sl, hpnd_sl_out=hpnd_sl, &
            rfracmin_out=rfracmin, rfracmax_out=rfracmax, &
            pndaspect_out=pndaspect, hs1_out=hs1, hp1_out=hp1, &
            ktherm_out=ktherm, calc_Tsfc_out=calc_Tsfc, &
@@ -726,6 +730,11 @@
          write(nu_diag,1000) ' dpscale                   = ', dpscale
          write(nu_diag,1030) ' frzpnd                    = ', trim(frzpnd)
          write(nu_diag,1030) ' pndhyps                   = ', trim(pndhyps)
+         write(nu_diag,1030) ' pndfrbd                   = ', trim(pndfrbd)
+         write(nu_diag,1030) ' pndhead                   = ', trim(pndhead)
+         write(nu_diag,1030) ' pndmacr                   = ', trim(pndmacr)
+         write(nu_diag,1000) ' apnd_sl                   = ', apnd_sl
+         write(nu_diag,1000) ' hpnd_sl                   = ', hpnd_sl
          endif
          if (tr_pond .and. .not. tr_pond_lvl) &
          write(nu_diag,1000) ' pndaspect                 = ', pndaspect
@@ -971,7 +980,8 @@
            emissivity_in=emissivity, &
            kitd_in=kitd, kcatbound_in=kcatbound, hs0_in=hs0, &
            dpscale_in=dpscale, frzpnd_in=frzpnd, &
-           pndhyps_in=pndhyps, &
+           pndhyps_in=pndhyps, pndfrbd_in=pndfrbd, pndhead_in=pndhead, &
+           pndmacr_in=pndmacr, apnd_sl_in=apnd_sl, hpnd_sl_in=hpnd_sl, &
            rfracmin_in=rfracmin, rfracmax_in=rfracmax, &
            pndaspect_in=pndaspect, hs1_in=hs1, hp1_in=hp1, &
            floediam_in=floediam, hfrazilmin_in=hfrazilmin, &
