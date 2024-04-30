@@ -209,11 +209,12 @@
 
             ! limit pond depth to maintain nonnegative freeboard
             dhpond = min(((rhow-rhoi)*hi - rhos*hs)/rhofresh - hpondn, c0)
-            call pond_hypsometry(hpond=hpondn, apond=apondn, dhpond=dhpond, &
-                                 alvl=alvl_tmp)
             ! at this point apondn is the fraction of the entire category 
             ! (level + deformed) with ponds on it
             frpndn = - dhpond * apondn
+            call pond_hypsometry(hpond=hpondn, apond=apondn, dhpond=dhpond, &
+                                 alvl=alvl_tmp)
+            
             
             vpondn = hpondn*apondn
             ! note, this implies that if ponds fully drain or freeze their
@@ -428,7 +429,11 @@
             apond = min(sqrt(vp/pndaspect), alvl)
             ! preserve pond volume if pond fills all available level area
             hpond = c0
-            if (apond > puny) hpond = vp/apond
+            if (apond < alvl) then
+               hpond = apond * pndaspect
+            else
+               hpond = vp/apond
+            endif
          endif
       endif
       

@@ -3330,7 +3330,8 @@
      
     real(kind=dbl_kind) :: &
          apond    , & ! pond fraction of category (incl. deformed ice)
-         dhpond       ! change in pond depth per unit pond area (m)
+         dhpond   , & ! change in pond depth per unit pond area (m)
+         alvl_tmp     ! temporary variable for alvl
 
     real(kind=dbl_kind), parameter :: &
          hpond0 = 0.01_dbl_kind
@@ -3344,24 +3345,43 @@
        if (apnd > c0 .and. hpond > c0) then
 
           if (tr_pond_lvl) then
-               apond = apnd * alvl
+               if (apnd*alvl > puny**2) then
+                    apond = apnd * alvl
+                    alvl_tmp = alvl
+
+                    ! flush pond through mush
+                    dhpond = max(- w * dt / apnd, -hpond)
+                    flpnd = - dhpond * apond
+                    call pond_hypsometry(hpond=hpond, apond=apond, &
+                                         dhpond=dhpond, alvl=alvl_tmp)
+
+                    ! exponential decay of pond
+                    lambda_pond = c1 / (tscale_pnd_drain * 24.0_dbl_kind * &
+                                        3600.0_dbl_kind)
+                    dhpond = max(- lambda_pond * dt * (hpond + hpond0), -hpond)
+                    expnd = - dhpond * apond
+                    call pond_hypsometry(hpond=hpond, apond=apond, &
+                                         dhpond=dhpond, alvl=alvl_tmp)
+                    
+                    ! Reload tracers
+                    apnd = apond / alvl_tmp
+               endif
           else
-               apond = apnd
+               alvl_tmp = c1
+               ! flush pond through mush
+               dhpond = max(- w * dt / apnd, -hpond)
+               flpnd = - dhpond * apnd
+               call pond_hypsometry(hpond=hpond, apond=apnd, &
+                                    dhpond=dhpond, alvl=alvl_tmp)
+
+               ! exponential decay of pond
+               lambda_pond = c1 / (tscale_pnd_drain * 24.0_dbl_kind * &
+                                   3600.0_dbl_kind)
+               dhpond = max(- lambda_pond * dt * (hpond + hpond0), -hpond)
+               expnd = - dhpond * apnd
+               call pond_hypsometry(hpond=hpond, apond=apnd, &
+                                    dhpond=dhpond, alvl=alvl_tmp)
           endif
-
-          ! flush pond through mush
-          dhpond = max(- w * dt / apnd, -hpond)
-          flpnd = - dhpond * apond
-          call pond_hypsometry(hpond=hpond, apond=apond, dhpond=dhpond, &
-                               alvl=alvl)
-
-          ! exponential decay of pond
-          lambda_pond = c1 / (tscale_pnd_drain * 24.0_dbl_kind * 3600.0_dbl_kind)
-          dhpond = max(- lambda_pond * dt * (hpond + hpond0), -hpond)
-          expnd = - dhpond * apond
-          call pond_hypsometry(hpond=hpond, apond=apond, dhpond=dhpond, &
-                               alvl=alvl)
-          
        endif
     endif
 
