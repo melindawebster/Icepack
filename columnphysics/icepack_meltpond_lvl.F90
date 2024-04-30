@@ -19,7 +19,7 @@
       use icepack_parameters, only: viscosity_dyn, rhoi, rhos, rhow, Timelt, Tffresh, Lfresh
       use icepack_parameters, only: gravit, depressT, rhofresh, kice, pndaspect, use_smliq_pnd
       use icepack_parameters, only: ktherm, frzpnd, dpscale, hi_min
-      use icepack_parameters, only: pndhyps
+      use icepack_parameters, only: pndhyps, pndfrbd
       use icepack_tracers,    only: nilyr
       use icepack_warnings, only: warnstr, icepack_warnings_add
       use icepack_warnings, only: icepack_warnings_setabort, icepack_warnings_aborted
@@ -208,7 +208,16 @@
                                  dvpond=dvpondn, aicen=aicen, alvl=alvl_tmp)
 
             ! limit pond depth to maintain nonnegative freeboard
-            dhpond = min(((rhow-rhoi)*hi - rhos*hs)/rhofresh - hpondn, c0)
+            if (trim(pndfrbd) == 'floor') then
+               dhpond = min(((rhow-rhoi)*hi - rhos*hs)/rhofresh - hpondn, c0)
+            elseif (trim(pndfrbd) == 'category') then
+               dhpond = min(((rhow-rhoi)*hi-rhos*hs)/(rhofresh*apondn)-hpondn,&
+                            c0)
+            else
+               call icepack_warnings_add(subname//" invalid pndfrbd option" )
+               call icepack_warnings_setabort(.true.,__FILE__,__LINE__)
+               if (icepack_warnings_aborted(subname)) return
+            endif
             ! at this point apondn is the fraction of the entire category 
             ! (level + deformed) with ponds on it
             frpndn = - dhpond * apondn
