@@ -3351,14 +3351,16 @@
 
           ! flush pond through mush
           dhpond = max(- w * dt / apnd, -hpond)
-          call pond_hypsometry(hpond, dhpond=dhpond)
           flpnd = - dhpond * apond
+          call pond_hypsometry(hpond=hpond, apond=apond, dhpond=dhpond, &
+                               alvl=alvl)
 
           ! exponential decay of pond
           lambda_pond = c1 / (tscale_pnd_drain * 24.0_dbl_kind * 3600.0_dbl_kind)
           dhpond = max(- lambda_pond * dt * (hpond + hpond0), -hpond)
-          call pond_hypsometry(hpond, dhpond=dhpond)
           expnd = - dhpond * apond
+          call pond_hypsometry(hpond=hpond, apond=apond, dhpond=dhpond, &
+                               alvl=alvl)
           
        endif
     endif

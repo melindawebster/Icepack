@@ -209,8 +209,8 @@
 
             ! limit pond depth to maintain nonnegative freeboard
             dhpond = min(((rhow-rhoi)*hi - rhos*hs)/rhofresh - hpondn, c0)
-            apnd = apondn / alvl_tmp
-            call pond_hypsometry(hpondn, dhpond=dhpond)
+            call pond_hypsometry(hpond=hpondn, apond=apondn, dhpond=dhpond, &
+                                 alvl=alvl_tmp)
             ! at this point apondn is the fraction of the entire category 
             ! (level + deformed) with ponds on it
             frpndn = - dhpond * apondn
@@ -340,7 +340,8 @@
       ! local variables
       
       real (kind=dbl_kind) :: &
-         dv     ! local variable for change in pond volume
+         dv, &     ! local variable for change in pond volume
+         vp        ! local variable for pond volume per unit category area
       
       character(len=*),parameter :: subname='(pond_hypsometry)'
 
@@ -394,6 +395,40 @@
                hpond = c0 ! Loss of meltwater for very deformed ice
             endif
             apond = max(apond, c0)
+         endif
+      elseif (trim(pndhyps) == 'fixed') then
+         if (.not. present(apond)) then
+            call icepack_warnings_setabort(.true.,__FILE__,__LINE__)
+            call icepack_warnings_add(subname//" apond must be present if we are modifying apond" )
+            return
+         endif
+         if (.not. present(alvl)) then
+            call icepack_warnings_setabort(.true.,__FILE__,__LINE__)
+            call icepack_warnings_add(subname//" missing alvl")
+            return
+         endif
+         ! Get the change in volume
+         if (present(dvpond)) then
+            dv = dvpond
+         else ! compute change in volume from change in depth
+            dv = dhpond * apond
+         endif
+         if (present(vpond)) then
+            vp = vpond
+            vpond = max(vpond + dv, c0)
+         else ! compute initial pond volume from area and depth
+            vp = apond * hpond
+         endif
+         vp = vp + dv ! update pond volume
+         ! Compute pond area assuming that apond*pndaspect = hpond
+         if (vp <= puny) then
+            apond = c0
+            hpond = c0
+         else
+            apond = min(sqrt(vp/pndaspect), alvl)
+            ! preserve pond volume if pond fills all available level area
+            hpond = c0
+            if (apond > puny) hpond = vp/apond
          endif
       endif
       

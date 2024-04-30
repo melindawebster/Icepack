@@ -466,6 +466,7 @@
          atmbndy_in, calc_strair_in, formdrag_in, highfreq_in, natmiter_in, &
          atmiter_conv_in, calc_dragio_in, &
          tfrz_option_in, kitd_in, kcatbound_in, hs0_in, frzpnd_in, &
+         pndhyps_in, &
          saltflux_option_in, &
          floeshape_in, wave_spec_in, wave_spec_type_in, nfreq_in, &
          dpscale_in, rfracmin_in, rfracmax_in, pndaspect_in, hs1_in, hp1_in, &
@@ -785,7 +786,8 @@
 
       ! level-ice ponds
       character (len=*), intent(in), optional :: &
-         frzpnd_in          ! pond refreezing parameterization
+         frzpnd_in, &       ! pond refreezing parameterization
+         pndhyps_in         ! pond hypsometry parameterization
 
       real (kind=dbl_kind), intent(in), optional :: &
          dpscale_in, &      ! alter e-folding time scale for flushing
@@ -960,6 +962,7 @@
       if (present(nfreq_in)             ) nfreq            = nfreq_in
       if (present(hs0_in)               ) hs0              = hs0_in
       if (present(frzpnd_in)            ) frzpnd           = frzpnd_in
+      if (present(pndhyps_in)           ) pndhyps          = pndhyps_in
       if (present(dpscale_in)           ) dpscale          = dpscale_in
       if (present(rfracmin_in)          ) rfracmin         = rfracmin_in
       if (present(rfracmax_in)          ) rfracmax         = rfracmax_in
@@ -1193,6 +1196,7 @@
          atmbndy_out, calc_strair_out, formdrag_out, highfreq_out, natmiter_out, &
          atmiter_conv_out, calc_dragio_out, &
          tfrz_option_out, kitd_out, kcatbound_out, hs0_out, frzpnd_out, &
+         pndhyps_out, &
          saltflux_option_out, &
          floeshape_out, wave_spec_out, wave_spec_type_out, nfreq_out, &
          dpscale_out, rfracmin_out, rfracmax_out, pndaspect_out, hs1_out, hp1_out, &
@@ -1523,7 +1527,8 @@
 
       ! level-ice ponds
       character (len=*), intent(out), optional :: &
-         frzpnd_out          ! pond refreezing parameterization
+         frzpnd_out, &       ! pond refreezing parameterization
+         pndhyps_out         ! pond hypsometry parameterization
 
       real (kind=dbl_kind), intent(out), optional :: &
          dpscale_out, &      ! alter e-folding time scale for flushing
@@ -1730,6 +1735,7 @@
       if (present(nfreq_out)             ) nfreq_out        = nfreq
       if (present(hs0_out)               ) hs0_out          = hs0
       if (present(frzpnd_out)            ) frzpnd_out       = frzpnd
+      if (present(pndhyps_out)           ) pndhyps_out      = pndhyps
       if (present(dpscale_out)           ) dpscale_out      = dpscale
       if (present(rfracmin_out)          ) rfracmin_out     = rfracmin
       if (present(rfracmax_out)          ) rfracmax_out     = rfracmax
@@ -1937,6 +1943,7 @@
         write(iounit,*) "  nfreq      = ", nfreq
         write(iounit,*) "  hs0        = ", hs0
         write(iounit,*) "  frzpnd     = ", trim(frzpnd)
+        write(iounit,*) "  pndhyps    = ", trim(pndhyps)
         write(iounit,*) "  dpscale    = ", dpscale
         write(iounit,*) "  rfracmin   = ", rfracmin
         write(iounit,*) "  rfracmax   = ", rfracmax

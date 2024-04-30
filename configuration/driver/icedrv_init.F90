@@ -100,7 +100,8 @@
 
       character (len=char_len) :: shortwave, albedo_type, conduct, fbot_xfer_type, &
          cpl_frazil, tfrz_option, saltflux_option, &
-         frzpnd, atmbndy, wave_spec_type, snwredist, snw_aging_table
+         frzpnd, atmbndy, wave_spec_type, snwredist, snw_aging_table, &
+         pndhyps
 
       logical (kind=log_kind) :: sw_redist, use_smliq_pnd, snwgrain, update_ocn_f
       real (kind=dbl_kind)    :: sw_frac, sw_dtemp
@@ -163,7 +164,7 @@
       namelist /ponds_nml/ &
         hs0,            dpscale,         frzpnd,                        &
         rfracmin,       rfracmax,        pndaspect,     hs1,            &
-        hp1
+        hp1,            pndhyps
       namelist /snow_nml/ &
         snwredist,      snwgrain,       rsnw_fall,     rsnw_tmax,      &
         rhosnew,        rhosmin,        rhosmax,       snwlvlfac,      &
@@ -214,6 +215,7 @@
            emissivity_out=emissivity, &
            kitd_out=kitd, kcatbound_out=kcatbound, hs0_out=hs0, &
            dpscale_out=dpscale, frzpnd_out=frzpnd, &
+           pndhyps_out=pndhyps, &
            rfracmin_out=rfracmin, rfracmax_out=rfracmax, &
            pndaspect_out=pndaspect, hs1_out=hs1, hp1_out=hp1, &
            ktherm_out=ktherm, calc_Tsfc_out=calc_Tsfc, &
@@ -723,6 +725,7 @@
          write(nu_diag,1000) ' hs1                       = ', hs1
          write(nu_diag,1000) ' dpscale                   = ', dpscale
          write(nu_diag,1030) ' frzpnd                    = ', trim(frzpnd)
+         write(nu_diag,1030) ' pndhyps                   = ', trim(pndhyps)
          endif
          if (tr_pond .and. .not. tr_pond_lvl) &
          write(nu_diag,1000) ' pndaspect                 = ', pndaspect
@@ -968,6 +971,7 @@
            emissivity_in=emissivity, &
            kitd_in=kitd, kcatbound_in=kcatbound, hs0_in=hs0, &
            dpscale_in=dpscale, frzpnd_in=frzpnd, &
+           pndhyps_in=pndhyps, &
            rfracmin_in=rfracmin, rfracmax_in=rfracmax, &
            pndaspect_in=pndaspect, hs1_in=hs1, hp1_in=hp1, &
            floediam_in=floediam, hfrazilmin_in=hfrazilmin, &
