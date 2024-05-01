@@ -19,7 +19,7 @@
   use icepack_tracers, only: tr_pond, tr_pond_lvl
   use icepack_therm_shared, only: surface_heat_flux, dsurface_heat_flux_dTsf
   use icepack_therm_shared, only: ferrmax
-  use icepack_meltpond_lvl, only: pond_hypsometry
+  use icepack_meltpond_lvl, only: pond_hypsometry, pond_head
   use icepack_warnings, only: warnstr, icepack_warnings_add
   use icepack_warnings, only: icepack_warnings_setabort, icepack_warnings_aborted
 
