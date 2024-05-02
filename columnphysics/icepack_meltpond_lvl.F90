@@ -469,14 +469,15 @@
             if (trim(pndhyps) == 'fixed') then
                ! Applying a fixed aspect ratio to the ponds implicitly assumes
                ! that the hypsometric curve has a constant slope of double the
-               ! aspect ratio. We'll assume that the deformed ice in the category
-               ! also has the same mean thickness as the entire category.
+               ! aspect ratio if ponds occupy lowest elevations first. We'll 
+               ! assume that the deformed ice in the 
+               ! category occupies the upper end of the hypsometry.
                ! With these assumptions, we can derive the height of the mean
                ! pond surface above the mean base of the category
-               if (apond < alvl) then
-                  hpsurf = hin + c2*hpond - alvl*pndaspect
-               else
-                  hpsurf = hin + hpond ! ponds cover all available area
+               if (apond < (alvl - puny)) then
+                  hpsurf = hin - pndaspect + c2*pndaspect*apond
+               else ! ponds cover all available area
+                  hpsurf = hin + hpond - pndaspect*(c1 - alvl)
                endif
             else
                call icepack_warnings_add(subname//" unsupported pndhyps option" )

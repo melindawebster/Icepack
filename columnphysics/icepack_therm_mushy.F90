@@ -3279,6 +3279,10 @@
        perm_harm = real(nilyr,dbl_kind) / perm_harm
 
        ! calculate ocean surface height above bottom of ice
+       ! note that the existing parameterization here assumes that the level
+       ! areas of the category are decoupled from the deformed areas but that
+       ! the thicknesses of deformed and level ice are uniform, and it assumes
+       ! that the 
        hocn = (ice_mass + hpond * apnd * rhow + hsn * rhos) / rhow
 
        ! calculate brine height above bottom of ice
