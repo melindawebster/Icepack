@@ -5,7 +5,7 @@
   use icepack_kinds
   use icepack_parameters, only: c0, c1, c2, c8, c10
   use icepack_parameters, only: p01, p05, p1, p2, p5, pi, bignum, puny
-  use icepack_parameters, only: viscosity_dyn, rhow, rhoi, rhos, cp_ocn, cp_ice, Lfresh, gravit
+  use icepack_parameters, only: viscosity_dyn, rhow, rhoi, rhos, cp_ocn, cp_ice, Lfresh, gravit, rhofresh
   use icepack_parameters, only: hs_min, snwgrain
   use icepack_parameters, only: a_rapid_mode, Rac_rapid_mode, tscale_pnd_drain
   use icepack_parameters, only: aspect_rapid_mode, dSdt_slow_mode, phi_c_slow_mode
@@ -197,7 +197,8 @@
                            hin,    hsn,   &
                            hilyr,         &
                            hpond,  apnd,  &
-                           dt,     w)
+                           dt,     w,     &
+                           alvl=alvl)
     if (icepack_warnings_aborted(subname)) return
 
     ! calculate quantities related to drainage
@@ -3209,7 +3210,8 @@
                                hin,    hsn,   &
                                hilyr,         &
                                hpond,  apnd, &
-                               dt,     w)
+                               dt,     w,     &
+                               alvl)
 
     ! calculate the vertical flushing Darcy velocity (positive downward)
 
@@ -3227,6 +3229,9 @@
          hsn       , & ! snow thickness (m)
          hin       , & ! ice thickness (m)
          dt            ! time step (s)
+     
+     real(kind=dbl_kind), intent(in), optional :: &
+          alvl         ! level area fraction for the category
 
     real(kind=dbl_kind), intent(out) :: &
          w             ! vertical flushing Darcy flow rate (m s-1)
@@ -3284,7 +3289,12 @@
        perm_harm = real(nilyr,dbl_kind) / perm_harm
 
        ! calculate ocean surface height above bottom of ice
-       hocn = (ice_mass + hpond * apnd * rhow + hsn * rhos) / rhow
+       ! DCS hocn = (ice_mass + hpond * apnd * rhow + hsn * rhos) / rhow
+       if (tr_pond_lvl) then
+          hocn = (ice_mass + hpond * apnd * rhofresh * alvl + hsn * rhos) / rhow
+       else
+          hocn = (ice_mass + hpond * apnd * rhofresh + hsn * rhos) / rhow
+       endif
 
        ! calculate brine height above bottom of ice
        hbrine = hin + hpond
