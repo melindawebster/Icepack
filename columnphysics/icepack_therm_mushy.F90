@@ -3291,7 +3291,11 @@
        endif
 
        ! calculate brine height above bottom of ice
-       hbrine = hin + hpond
+       if (tr_pond_lvl) then
+          call pond_head(apnd*alvl, hpond, hin, hbrine, alvl=alvl)
+       else
+          call pond_head(apnd, hpond, hin, hbrine)
+       endif
 
        ! pressure head
        dhhead = max(hbrine - hocn,c0)

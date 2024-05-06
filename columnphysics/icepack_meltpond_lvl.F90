@@ -450,18 +450,30 @@
 
 !=======================================================================
 
-      subroutine pond_head(apond, hpond, alvl, hin, hpsurf)
+      subroutine pond_head(apond, hpond, hin, hpsurf, alvl)
 
          real (kind=dbl_kind), intent(in) :: &
             hin     , & ! category mean ice thickness
             apond   , & ! pond area fraction of the category (incl. deformed)
-            alvl    , & ! level ice fraction of category area
             hpond       ! mean pond depth (m)
+
+         real (kind=dbl_kind), intent(in), optional :: &
+            alvl        ! level ice fraction of category area
    
          real (kind=dbl_kind), intent(out) :: &
             hpsurf   ! height of pond surface above base of the ice (m)
+
+         real (kind=dbl_kind) :: &
+            alvl_tmp    ! local variable for alvl
          
          character(len=*),parameter :: subname='(pond_head)'
+
+         ! Check whether alvl was given, set to 1 if not
+         if (present(alvl)) then
+            alvl_tmp = alvl
+         else
+            alvl_tmp = c1
+         endif
    
          if (trim(pndhead) == 'perched') then
             hpsurf = hin + hpond
@@ -474,10 +486,10 @@
                ! category occupies the upper end of the hypsometry.
                ! With these assumptions, we can derive the height of the mean
                ! pond surface above the mean base of the category
-               if (apond < (alvl - puny)) then
+               if (apond < (alvl_tmp - puny)) then
                   hpsurf = hin - pndaspect + c2*pndaspect*apond
                else ! ponds cover all available area
-                  hpsurf = hin + hpond - pndaspect*(c1 - alvl)
+                  hpsurf = hin + hpond - pndaspect*(c1 - alvl_tmp)
                endif
             else
                call icepack_warnings_add(subname//" unsupported pndhyps option" )
