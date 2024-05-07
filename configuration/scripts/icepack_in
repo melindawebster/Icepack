@@ -87,6 +87,7 @@
     rfracmin        = 0.15
     rfracmax        = 1.
     pndaspect       = 0.8
+    tscale_pnd_drain= 10.
 /
 
 &snow_nml

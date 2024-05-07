@@ -94,7 +94,7 @@
          phi_c_slow_mode, phi_i_mushy, kalg, emissivity, floediam, hfrazilmin, &
          rsnw_fall, rsnw_tmax, rhosnew, rhosmin, rhosmax, &
          windmin, drhosdwind, snwlvlfac, &
-         apnd_sl, hpnd_sl
+         apnd_sl, hpnd_sl, tscale_pnd_drain
 
       integer (kind=int_kind) :: ktherm, kstrength, krdg_partic, krdg_redist, &
          natmiter, kitd, kcatbound
@@ -166,7 +166,7 @@
         hs0,            dpscale,         frzpnd,                        &
         rfracmin,       rfracmax,        pndaspect,     hs1,            &
         hp1,            pndhyps,         pndfrbd,       pndhead,        &
-        pndmacr,        apnd_sl,         hpnd_sl
+        pndmacr,        apnd_sl,         hpnd_sl,       tscale_pnd_drain
 
       namelist /snow_nml/ &
         snwredist,      snwgrain,       rsnw_fall,     rsnw_tmax,      &
@@ -220,6 +220,7 @@
            dpscale_out=dpscale, frzpnd_out=frzpnd, &
            pndhyps_out=pndhyps, pndfrbd_out=pndfrbd, pndhead_out=pndhead, &
            pndmacr_out=pndmacr, apnd_sl_out=apnd_sl, hpnd_sl_out=hpnd_sl, &
+           tscale_pnd_drain_out=tscale_pnd_drain, &
            rfracmin_out=rfracmin, rfracmax_out=rfracmax, &
            pndaspect_out=pndaspect, hs1_out=hs1, hp1_out=hp1, &
            ktherm_out=ktherm, calc_Tsfc_out=calc_Tsfc, &
@@ -766,6 +767,7 @@
          write(nu_diag,1005) ' phi_c_slow_mode           = ', phi_c_slow_mode
          write(nu_diag,1005) ' phi_i_mushy               = ', phi_i_mushy
          write(nu_diag,1005) ' Tliquidus_max             = ', Tliquidus_max
+         write(nu_diag,1005) ' tscale_pnd_drain          = ', tscale_pnd_drain
          endif
 
          write(nu_diag,1030) ' atmbndy                   = ', trim(atmbndy)
@@ -982,6 +984,7 @@
            dpscale_in=dpscale, frzpnd_in=frzpnd, &
            pndhyps_in=pndhyps, pndfrbd_in=pndfrbd, pndhead_in=pndhead, &
            pndmacr_in=pndmacr, apnd_sl_in=apnd_sl, hpnd_sl_in=hpnd_sl, &
+           tscale_pnd_drain_in=tscale_pnd_drain, &
            rfracmin_in=rfracmin, rfracmax_in=rfracmax, &
            pndaspect_in=pndaspect, hs1_in=hs1, hp1_in=hp1, &
            floediam_in=floediam, hfrazilmin_in=hfrazilmin, &
