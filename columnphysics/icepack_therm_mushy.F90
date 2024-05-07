@@ -7,6 +7,7 @@
   use icepack_parameters, only: p01, p05, p1, p2, p5, pi, bignum, puny
   use icepack_parameters, only: viscosity_dyn, rhow, rhoi, rhos, cp_ocn, cp_ice, Lfresh, gravit, rhofresh
   use icepack_parameters, only: hs_min, snwgrain
+  use icepack_parameters, only: pndmacr
   use icepack_parameters, only: a_rapid_mode, Rac_rapid_mode, tscale_pnd_drain
   use icepack_parameters, only: aspect_rapid_mode, dSdt_slow_mode, phi_c_slow_mode
   use icepack_parameters, only: sw_redist, sw_frac, sw_dtemp
@@ -345,7 +346,8 @@
     endif
 
     ! drain ponds from flushing
-    call flush_pond(w, hpond, apnd, dt, flpnd, expnd, alvl)
+    call flush_pond(w, hpond, apnd, dt, flpnd, expnd, alvl, nilyr, &
+                        zTin, phi, hilyr, hin, hsn)
     if (icepack_warnings_aborted(subname)) return
 
     ! flood snow ice
@@ -3326,14 +3328,25 @@
 
 !=======================================================================
 
-  subroutine flush_pond(w, hpond, apnd, dt, flpnd, expnd, alvl)
+  subroutine flush_pond(w, hpond, apnd, dt, flpnd, expnd, alvl, nilyr, &
+                        zTin, phi, hilyr, hin, hsn)
 
     ! given a flushing velocity drain the meltponds
 
     real(kind=dbl_kind), intent(in) :: &
          w     , & ! vertical flushing Darcy flow rate (m s-1)
          dt    , & ! time step (s)
-         alvl      ! level ice fraction (-)
+         alvl  , & ! level ice fraction (-)
+         hilyr , & ! ice layer thickness (m)
+         hin   , & ! ice thickness (m)
+         hsn       ! snow thickness (m)
+
+    integer (kind=int_kind), intent(in) :: &
+         nilyr         ! number of ice layers
+
+    real(kind=dbl_kind), dimension(:), intent(in) :: &
+         zTin      , & ! ice layer temperature (C)
+         phi           ! ice layer liquid fraction
 
     real(kind=dbl_kind), intent(inout) :: &
          hpond , & ! melt pond thickness (m)
@@ -3344,8 +3357,12 @@
     real(kind=dbl_kind) :: &
          apond    , & ! pond fraction of category (incl. deformed ice)
          dhpond   , & ! change in pond depth per unit pond area (m)
-         alvl_tmp     ! temporary variable for alvl
-
+         alvl_tmp , & ! temporary variable for alvl
+         ice_mass , & ! mass of ice (kg m-2)
+         hocn     , & ! height of ocean above mean base of ice (m)
+         hpsurf   , & ! height of the pond surface above mean base of ice (m)
+         head         ! height of pond surface above sea level (m)
+         
     real(kind=dbl_kind), parameter :: &
          hpond0 = 0.01_dbl_kind
 
@@ -3363,16 +3380,34 @@
                     alvl_tmp = alvl
 
                     ! flush pond through mush
-                    dhpond = max(- w * dt / apnd, -hpond)
-                    flpnd = - dhpond * apond
+                    dhpond = max(-w * dt / apnd, -hpond)
+                    flpnd = -dhpond * apond
                     call pond_hypsometry(hpond=hpond, apond=apond, &
                                          dhpond=dhpond, alvl=alvl_tmp)
 
                     ! exponential decay of pond
                     lambda_pond = c1 / (tscale_pnd_drain * 24.0_dbl_kind * &
                                         3600.0_dbl_kind)
-                    dhpond = max(- lambda_pond * dt * (hpond + hpond0), -hpond)
-                    expnd = - dhpond * apond
+                    if (trim(pndmacr) == 'lambda') then
+                         dhpond = max(-lambda_pond * dt * (hpond + hpond0), &
+                                      -hpond)
+                    elseif (trim(pndmacr) == 'head') then
+                         call calc_ice_mass(nilyr, phi, zTin, hilyr, ice_mass)
+                         hocn = (ice_mass + hpond * apond * rhofresh + hsn &
+                                 * rhos) / rhow
+                         call pond_head(apond, hpond, hin,hpsurf,alvl=alvl_tmp)
+                         head = hpsurf - hocn
+                         if (head > c0) then
+                              dhpond = max(-lambda_pond * dt * head, -hpond)
+                         else
+                              dhpond = c0
+                         endif
+                    else
+                         call icepack_warnings_add(subname//" unsupported pndmacr option" )
+                         call icepack_warnings_setabort(.true.,__FILE__,__LINE__)
+                         if (icepack_warnings_aborted(subname)) return
+                    endif
+                    expnd = -dhpond * apond
                     call pond_hypsometry(hpond=hpond, apond=apond, &
                                          dhpond=dhpond, alvl=alvl_tmp)
                     
@@ -3382,16 +3417,34 @@
           else
                alvl_tmp = c1
                ! flush pond through mush
-               dhpond = max(- w * dt / apnd, -hpond)
-               flpnd = - dhpond * apnd
+               dhpond = max(-w * dt / apnd, -hpond)
+               flpnd = -dhpond * apnd
                call pond_hypsometry(hpond=hpond, apond=apnd, &
                                     dhpond=dhpond, alvl=alvl_tmp)
 
                ! exponential decay of pond
                lambda_pond = c1 / (tscale_pnd_drain * 24.0_dbl_kind * &
                                    3600.0_dbl_kind)
-               dhpond = max(- lambda_pond * dt * (hpond + hpond0), -hpond)
-               expnd = - dhpond * apnd
+               if (trim(pndmacr) == 'lambda') then
+                    dhpond = max(-lambda_pond * dt * (hpond + hpond0), &
+                                   -hpond)
+               elseif (trim(pndmacr) == 'head') then
+                    call calc_ice_mass(nilyr, phi, zTin, hilyr, ice_mass)
+                    hocn = (ice_mass + hpond * apnd * rhofresh + hsn &
+                              * rhos) / rhow
+                    call pond_head(apnd, hpond, hin, hpsurf)
+                    head = hpsurf - hocn
+                    if (head > c0) then
+                         dhpond = max(-lambda_pond * dt * head, -hpond)
+                    else
+                         dhpond = c0
+                    endif
+               else
+                    call icepack_warnings_add(subname//" unsupported pndmacr option" )
+                    call icepack_warnings_setabort(.true.,__FILE__,__LINE__)
+                    if (icepack_warnings_aborted(subname)) return
+               endif
+               expnd = -dhpond * apnd
                call pond_hypsometry(hpond=hpond, apond=apnd, &
                                     dhpond=dhpond, alvl=alvl_tmp)
           endif
