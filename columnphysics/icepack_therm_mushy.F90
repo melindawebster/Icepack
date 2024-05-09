@@ -3383,7 +3383,7 @@
                     dhpond = max(-w * dt / apnd, -hpond)
                     flpnd = -dhpond * apond
                     call pond_hypsometry(hpond=hpond, apond=apond, &
-                                         dhpond=dhpond, alvl=alvl_tmp)
+                                         dhpond=dhpond, alvl=alvl_tmp, hin=hin)
 
                     ! exponential decay of pond
                     lambda_pond = c1 / (tscale_pnd_drain * 24.0_dbl_kind * &
@@ -3409,7 +3409,7 @@
                     endif
                     expnd = -dhpond * apond
                     call pond_hypsometry(hpond=hpond, apond=apond, &
-                                         dhpond=dhpond, alvl=alvl_tmp)
+                                         dhpond=dhpond, alvl=alvl_tmp, hin=hin)
                     
                     ! Reload tracers
                     apnd = apond / alvl_tmp
@@ -3420,7 +3420,7 @@
                dhpond = max(-w * dt / apnd, -hpond)
                flpnd = -dhpond * apnd
                call pond_hypsometry(hpond=hpond, apond=apnd, &
-                                    dhpond=dhpond, alvl=alvl_tmp)
+                                    dhpond=dhpond, alvl=alvl_tmp, hin=hin)
 
                ! exponential decay of pond
                lambda_pond = c1 / (tscale_pnd_drain * 24.0_dbl_kind * &
@@ -3446,7 +3446,7 @@
                endif
                expnd = -dhpond * apnd
                call pond_hypsometry(hpond=hpond, apond=apnd, &
-                                    dhpond=dhpond, alvl=alvl_tmp)
+                                    dhpond=dhpond, alvl=alvl_tmp, hin=hin)
           endif
        endif
     endif

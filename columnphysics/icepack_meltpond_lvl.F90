@@ -18,8 +18,9 @@
       use icepack_parameters, only: c0, c1, c2, c10, p01, p5, puny
       use icepack_parameters, only: viscosity_dyn, rhoi, rhos, rhow, Timelt, Tffresh, Lfresh
       use icepack_parameters, only: gravit, depressT, rhofresh, kice, pndaspect, use_smliq_pnd
+      use icepack_parameters, only: rhow, rhosi
       use icepack_parameters, only: ktherm, frzpnd, dpscale, hi_min
-      use icepack_parameters, only: pndhyps, pndfrbd, pndhead
+      use icepack_parameters, only: pndhyps, pndfrbd, pndhead, apnd_sl
       use icepack_tracers,    only: nilyr
       use icepack_warnings, only: warnstr, icepack_warnings_add
       use icepack_warnings, only: icepack_warnings_setabort, icepack_warnings_aborted
@@ -205,7 +206,8 @@
             ! update pond area and depth
             !-----------------------------------------------------------
             call pond_hypsometry(hpond=hpondn, apond=apondn, vpond=vpondn, &
-                                 dvpond=dvpondn, aicen=aicen, alvl=alvl_tmp)
+                                 dvpond=dvpondn, aicen=aicen, alvl=alvl_tmp, &
+                                 hin=hi)
 
             ! limit pond depth to maintain nonnegative freeboard
             if (trim(pndfrbd) == 'floor') then
@@ -222,7 +224,7 @@
             ! (level + deformed) with ponds on it
             frpndn = - dhpond * apondn
             call pond_hypsometry(hpond=hpondn, apond=apondn, dhpond=dhpond, &
-                                 alvl=alvl_tmp)
+                                 alvl=alvl_tmp, hin=hi)
             
             
             vpondn = hpondn*apondn
@@ -332,7 +334,8 @@
 
 ! compute the changes in pond area and depth
 
-      subroutine pond_hypsometry(hpond, apond, vpond, dhpond, dvpond, aicen, alvl)
+      subroutine pond_hypsometry(hpond, apond, vpond, dhpond, dvpond, aicen, &
+                                 alvl, hin)
 
       real (kind=dbl_kind), intent(inout) :: &
          hpond     ! pond depth tracer
@@ -345,7 +348,8 @@
          dhpond, & ! incoming change in pond depth (may be converted to dv)
          dvpond, & ! incoming change in pond volume per unit category area
          aicen, &  ! category fractional area
-         alvl      ! category fraction level ice
+         alvl, &   ! category fraction level ice
+         hin       ! category ice thickness
       
       ! local variables
       
@@ -406,7 +410,8 @@
             endif
             apond = max(apond, c0)
          endif
-      elseif (trim(pndhyps) == 'fixed') then
+      elseif (trim(pndhyps) == 'fixed'.or. & 
+         (trim(pndhyps) == 'sealevel')) then
          if (.not. present(apond)) then
             call icepack_warnings_setabort(.true.,__FILE__,__LINE__)
             call icepack_warnings_add(subname//" apond must be present if we are modifying apond" )
@@ -415,6 +420,11 @@
          if (.not. present(alvl)) then
             call icepack_warnings_setabort(.true.,__FILE__,__LINE__)
             call icepack_warnings_add(subname//" missing alvl")
+            return
+         endif
+         if ((trim(pndhyps) == 'sealevel') .and. (.not. present(hin))) then
+            call icepack_warnings_setabort(.true.,__FILE__,__LINE__)
+            call icepack_warnings_add(subname//" hin needed for sealevel ponds")
             return
          endif
          ! Get the change in volume
@@ -435,6 +445,7 @@
             apond = c0
             hpond = c0
          else
+            call calc_pndaspect(hin)
             apond = min(sqrt(vp/pndaspect), alvl)
             ! preserve pond volume if pond fills all available level area
             hpond = c0
@@ -478,7 +489,8 @@
          if (trim(pndhead) == 'perched') then
             hpsurf = hin + hpond
          elseif (trim(pndhead) == 'hyps') then
-            if (trim(pndhyps) == 'fixed') then
+            if ((trim(pndhyps) == 'fixed') .or. &
+               (trim(pndhyps) == 'sealevel')) then
                ! Applying a fixed aspect ratio to the ponds implicitly assumes
                ! that the hypsometric curve has a constant slope of double the
                ! aspect ratio if ponds occupy lowest elevations first. We'll 
@@ -486,6 +498,7 @@
                ! category occupies the upper end of the hypsometry.
                ! With these assumptions, we can derive the height of the mean
                ! pond surface above the mean base of the category
+               call calc_pndaspect(hin)
                if (apond < (alvl_tmp - puny)) then
                   hpsurf = hin - pndaspect + c2*pndaspect*apond
                else ! ponds cover all available area
@@ -504,6 +517,27 @@
    
       end subroutine pond_head
 
-      end module icepack_meltpond_lvl
+!=======================================================================
 
+      subroutine calc_pndaspect(hin)
+
+         real (kind=dbl_kind), intent(in), optional :: &
+            hin   ! category mean ice thickness (m)
+
+         character(len=*),parameter :: subname='(sealevel_pndaspect)'
+
+         ! Compute the pond aspect ratio for sea level ponds
+         if (trim(pndhyps) == 'sealevel') then
+            if (.not. present(hin)) then
+               call icepack_warnings_setabort(.true.,__FILE__,__LINE__)
+               call icepack_warnings_add(subname//" hin needed for sealevel ponds")
+               return
+            endif
+            pndaspect = hin*(rhow - rhosi) / &
+               (rhofresh*apnd_sl**c2 - c2*rhow*apnd_sl + rhow)
+         endif ! Otherwise do nothing to pond aspect
+
+      end subroutine calc_pndaspect
+
+   end module icepack_meltpond_lvl
 !=======================================================================
